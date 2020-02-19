@@ -1,4 +1,5 @@
-import React from 'react';
+/* eslint-disable react/prop-types */
+import React, {Mixin} from 'react';
 import Reflux from 'reflux';
 import createReactClass from 'create-react-class';
 import {browserHistory} from 'react-router';
@@ -9,8 +10,10 @@ import recreateRoute from 'app/utils/recreateRoute';
 import ProjectDatascrubbersContent from './projectDatascrubbersContent';
 
 const ProjectDatascrubbers = createReactClass({
-  // @ts-ignore Type 'void[]' is not assignable to type 'Mixin<unknown, {}>[]'
-  mixins: [Reflux.listenTo(ProjectsStore, 'onProjectsUpdate')],
+  mixins: ([Reflux.listenTo(ProjectsStore, 'onProjectsUpdate')] as unknown) as Mixin<
+    unknown,
+    {}
+  >[],
   onProjectsUpdate(_projects) {
     if (!this.changedSlug) {
       return;
@@ -35,7 +38,11 @@ const ProjectDatascrubbers = createReactClass({
   render() {
     return (
       <ProjectDatascrubbersContent
-        {...this.props}
+        params={this.props.params}
+        organization={{
+          features: this.props.organization.features,
+          access: this.props.organization.access,
+        }}
         onChangeSlug={newSlug => (this.changedSlug = newSlug)}
       />
     );
