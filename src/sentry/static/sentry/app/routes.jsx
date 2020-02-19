@@ -303,6 +303,26 @@ function routes() {
       </Route>
 
       <Route
+        name="Datascrubbers Settings"
+        path="datascrubbers-settings"
+        component={errorHandler(LazyLoad)}
+        componentPromise={() =>
+          import(
+            /* webpackChunkName: "ProjectAlertsNew" */ 'app/views/settings/projectDatascrubbers/projectDatascrubbers'
+          )
+        }
+      >
+        <IndexRoute
+          component={errorHandler(LazyLoad)}
+          componentPromise={() =>
+            import(
+              /* webpackChunkName: "ProjectAlertRules" */ 'app/views/settings/projectAlerts/projectAlertRulesNew'
+            )
+          }
+        />
+      </Route>
+
+      <Route
         name="Alert Rules"
         path="alerts-v2/"
         component={errorHandler(LazyLoad)}
