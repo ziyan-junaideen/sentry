@@ -5,7 +5,7 @@ import Reflux from 'reflux';
 import createReactClass from 'create-react-class';
 
 import Alert from 'app/components/alert';
-import {Panel, PanelAlert, PanelHeader} from 'app/components/panels';
+import {Panel, PanelAlert, PanelBody, PanelHeader} from 'app/components/panels';
 import {
   changeProjectSlug,
   removeProject,
@@ -31,6 +31,8 @@ import handleXhrErrorResponse from 'app/utils/handleXhrErrorResponse';
 import marked from 'app/utils/marked';
 import recreateRoute from 'app/utils/recreateRoute';
 import routeTitleGen from 'app/utils/routeTitle';
+import Link from 'app/components/links/link';
+import EmptyMessage from 'app/views/settings/components/emptyMessage';
 
 class ProjectGeneralSettings extends AsyncView {
   static propTypes = {
@@ -473,19 +475,19 @@ class ProjectGeneralSettings extends AsyncView {
             />
           )}
 
-          <JsonForm
-            {...jsonFormProps}
-            title={t('Data Privacy')}
-            fields={[
-              fields.dataScrubber,
-              fields.dataScrubberDefaults,
-              fields.scrubIPAddresses,
-              fields.sensitiveFields,
-              fields.safeFields,
-              fields.storeCrashReports,
-              fields.relayPiiConfig,
-            ]}
-          />
+          <Panel>
+            <PanelHeader>{t('Data Privacy')}</PanelHeader>
+            <EmptyMessage
+              title="Data Privacy section now has its own tab called Datascrubbers Settings"
+              description={
+                <Link
+                  to={`/settings/${orgId}/projects/${projectId}/datascrubbers-settings/`}
+                >
+                  {t('Go to Datascrubbers Settings')}
+                </Link>
+              }
+            />
+          </Panel>
 
           <JsonForm
             {...jsonFormProps}

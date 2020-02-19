@@ -20,7 +20,7 @@ type Props = {
 
   // TODO(ts): See if this is still in use
   access?: any;
-  features?: string[];
+  features?: {[key: string]: any};
 
   additionalFieldProps: {[key: string]: any};
 

@@ -33,7 +33,12 @@ const ProjectDatascrubbers = createReactClass({
   },
 
   render() {
-    return <ProjectDatascrubbersContent {...this.props} {...this.state} />;
+    return (
+      <ProjectDatascrubbersContent
+        {...this.props}
+        onChangeSlug={newSlug => (this.changedSlug = newSlug)}
+      />
+    );
   },
 });
 
