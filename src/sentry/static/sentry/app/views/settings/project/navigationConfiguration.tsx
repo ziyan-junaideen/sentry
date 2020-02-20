@@ -57,6 +57,7 @@ export default function getConfiguration({project}: ConfigParams): NavigationSec
           title: t('Data Privacy'),
           description: t('Configure Datascrubbers for a project'),
           show: ({features}) => features!.has('datascrubbers-v2'),
+          badge: () => '+1',
         },
         {
           path: `${pathPrefix}/data-forwarding/`,
