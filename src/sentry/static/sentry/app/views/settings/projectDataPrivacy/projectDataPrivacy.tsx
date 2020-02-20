@@ -9,7 +9,7 @@ import recreateRoute from 'app/utils/recreateRoute';
 
 import ProjectDatascrubbersContent from './projectDatascrubbersContent';
 
-const ProjectDatascrubbers = createReactClass({
+const ProjectDataPrivacy = createReactClass({
   mixins: ([Reflux.listenTo(ProjectsStore, 'onProjectsUpdate')] as unknown) as Mixin<
     unknown,
     {}
@@ -49,4 +49,4 @@ const ProjectDatascrubbers = createReactClass({
   },
 });
 
-export default ProjectDatascrubbers;
+export default ProjectDataPrivacy;

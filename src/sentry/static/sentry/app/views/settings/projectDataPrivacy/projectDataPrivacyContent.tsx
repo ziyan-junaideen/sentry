@@ -10,20 +10,18 @@ import {fields} from 'app/data/forms/projectGeneralSettings';
 import AsyncView from 'app/views/asyncView';
 import ProjectActions from 'app/actions/projectActions';
 import {changeProjectSlug} from 'app/actionCreators/projects';
+import {OrganizationSummary} from 'app/types';
 
 type Props = {
   onChangeSlug: (slug: any) => void;
-  organization: {
-    features: Array<string>;
-    access: Array<string>;
-  };
+  organization: OrganizationSummary;
   params: {
     orgId: string;
     projectId: string;
   };
 };
 
-class ProjectDatascrubbersContent extends AsyncView<Props> {
+class ProjectDataPrivacyContent extends AsyncView<Props> {
   static propTypes = {
     onChangeSlug: PropTypes.func,
   };
@@ -31,11 +29,6 @@ class ProjectDatascrubbersContent extends AsyncView<Props> {
   static contextTypes = {
     organization: PropTypes.object.isRequired,
   };
-
-  constructor(...args) {
-    // @ts-ignore an argument for 'props' was not provided.
-    super(...args);
-  }
 
   // @ts-ignore
   getEndpoints() {
@@ -58,14 +51,13 @@ class ProjectDatascrubbersContent extends AsyncView<Props> {
     const access = new Set(organization.access);
     return (
       <React.Fragment>
-        <SettingsPageHeader title={t('Datascrubbers Settings')} />
+        <SettingsPageHeader title={t('Data Privacy')} />
         <PermissionAlert />
         <Form
           saveOnBlur
           allowUndo
           initialData={{
             ...project,
-            team: project.team && project.team.slug,
           }}
           apiMethod="PUT"
           apiEndpoint={endpoint}
@@ -109,4 +101,4 @@ class ProjectDatascrubbersContent extends AsyncView<Props> {
   }
 }
 
-export default ProjectDatascrubbersContent;
+export default ProjectDataPrivacyContent;

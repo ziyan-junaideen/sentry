@@ -19,8 +19,8 @@ type Props = {
   fields: FieldObject[];
 
   // TODO(ts): See if this is still in use
-  access?: any;
-  features?: Scope | {[key: string]: any};
+  access?: Scope[];
+  features?: string[];
 
   additionalFieldProps: {[key: string]: any};
 

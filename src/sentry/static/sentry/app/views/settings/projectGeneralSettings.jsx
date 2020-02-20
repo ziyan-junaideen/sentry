@@ -478,12 +478,10 @@ class ProjectGeneralSettings extends AsyncView {
           <Panel>
             <PanelHeader>{t('Data Privacy')}</PanelHeader>
             <EmptyMessage
-              title="Data Privacy section now has its own tab called Datascrubbers Settings"
+              title="Data Privacy section now has its own tab. 🎉"
               description={
-                <Link
-                  to={`/settings/${orgId}/projects/${projectId}/datascrubbers-settings/`}
-                >
-                  {t('Go to Datascrubbers Settings')}
+                <Link to={`/settings/${orgId}/projects/${projectId}/data-privacy/`}>
+                  {t('Go to Data Privacy')}
                 </Link>
               }
             />
