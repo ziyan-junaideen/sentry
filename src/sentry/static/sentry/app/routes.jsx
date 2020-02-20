@@ -303,12 +303,12 @@ function routes() {
       </Route>
 
       <Route
-        name="Datascrubbers"
-        path="datascrubbers"
+        name="Data Privacy"
+        path="data-privacy"
         component={errorHandler(LazyLoad)}
         componentPromise={() =>
           import(
-            /* webpackChunkName: "ProjectDataPrivacy" */ 'app/views/settings/ProjectDataPrivacy/ProjectDataPrivacy'
+            /* webpackChunkName: "ProjectDataPrivacy" */ 'app/views/settings/projectDataPrivacy/projectDataPrivacy'
           )
         }
       />
