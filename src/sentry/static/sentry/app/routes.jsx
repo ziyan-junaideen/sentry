@@ -379,7 +379,7 @@ function routes() {
             name="Edit Alert Rule"
             componentPromise={() =>
               import(
-                /* webpackChunkName: "ProjectAlertRuleDetails" */ 'app/views/settings/projectAlerts/ruleDetailsNew'
+                /* webpackChunkName: "ProjectAlertRuleDetails" */ 'app/views/settings/projectAlerts/issueEditor'
               )
             }
             component={errorHandler(LazyLoad)}
