@@ -9,6 +9,7 @@ from sentry.utils.http import absolute_uri
 
 from .mixins import VisualStudioMixin
 from .repository_provider import VisualStudioRepositoryProvider
+from sentry.integrations import FeatureDescription, IntegrationFeatures
 
 
 class VstsPlugin(VisualStudioMixin, IssueTrackingPlugin2):
@@ -17,6 +18,14 @@ class VstsPlugin(VisualStudioMixin, IssueTrackingPlugin2):
     conf_key = slug
     auth_provider = "visualstudio"
     required_field = "instance"
+    feature_descriptions = [
+        FeatureDescription(
+            """
+            Dummy
+            """,
+            IntegrationFeatures.DEPLOYMENT,
+        )
+    ]
 
     issue_fields = frozenset(["id", "title", "url"])
 
