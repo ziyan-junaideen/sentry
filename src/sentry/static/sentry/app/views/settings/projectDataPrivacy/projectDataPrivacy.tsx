@@ -9,18 +9,18 @@ import ProjectDataPrivacyContent from './projectDataPrivacyContent';
 import {DataPrivacy} from './types';
 
 const ProjectDataPrivacy = ({params, organization}: DataPrivacy) => (
-  <Feature features={['datascrubbers-v2']}>
-    {({hasFeature, features}) =>
-      hasFeature ? (
-        <ProjectDataPrivacyContent params={params} organization={organization} />
-      ) : (
-        <FeatureDisabled
-          alert={PanelAlert}
-          features={features}
-          featureName={t('Data Privacy - new')}
-        />
-      )
-    }
+  <Feature
+    features={['datascrubbers-v2']}
+    organization={organization}
+    renderDisabled={() => (
+      <FeatureDisabled
+        alert={PanelAlert}
+        features={organization.features}
+        featureName={t('Data Privacy - new')}
+      />
+    )}
+  >
+    <ProjectDataPrivacyContent params={params} organization={organization} />
   </Feature>
 );
 

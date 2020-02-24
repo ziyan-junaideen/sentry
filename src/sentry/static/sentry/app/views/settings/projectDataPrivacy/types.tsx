@@ -1,7 +1,7 @@
-import {OrganizationSummary} from 'app/types';
+import {Organization} from 'app/types';
 
 export type DataPrivacy = {
-  organization: OrganizationSummary;
+  organization: Organization;
   params: {
     orgId: string;
     projectId: string;
