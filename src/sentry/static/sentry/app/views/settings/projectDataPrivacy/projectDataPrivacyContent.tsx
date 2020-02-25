@@ -3,7 +3,6 @@ import PropTypes from 'prop-types';
 
 import {t} from 'app/locale';
 import SettingsPageHeader from 'app/views/settings/components/settingsPageHeader';
-import PermissionAlert from 'app/views/settings/project/permissionAlert';
 import JsonForm from 'app/views/settings/components/forms/jsonForm';
 import Form from 'app/views/settings/components/forms/form';
 import {fields} from 'app/data/forms/projectGeneralSettings';
@@ -36,7 +35,6 @@ class ProjectDataPrivacyContent extends AsyncView<DataPrivacy> {
     return (
       <React.Fragment>
         <SettingsPageHeader title={t('Data Privacy')} />
-        <PermissionAlert />
         <Form
           saveOnBlur
           allowUndo
