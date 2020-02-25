@@ -18,10 +18,9 @@ class ProjectDataPrivacyContent extends AsyncView<DataPrivacy> {
     router: PropTypes.object,
   };
 
-  getEndpoints() {
+  getEndpoints(): GetEndPointsOutput {
     const {orgId, projectId} = this.props.params;
-    const endpoints: GetEndPointsOutput = [['data', `/projects/${orgId}/${projectId}/`]];
-    return endpoints;
+    return [['data', `/projects/${orgId}/${projectId}/`]];
   }
 
   renderBody() {

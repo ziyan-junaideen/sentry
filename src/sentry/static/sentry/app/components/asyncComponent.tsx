@@ -40,7 +40,7 @@ type RenderSearchInputArgs = Omit<
   url?: SearchInputProps['url'];
 };
 
-export type GetEndPointsOutput = [string, string, any?, any?][];
+export type GetEndPointsOutput = Array<[string, string, any?, any?]>;
 
 /**
  * Wraps methods on the AsyncComponent to catch errors and set the `error`
