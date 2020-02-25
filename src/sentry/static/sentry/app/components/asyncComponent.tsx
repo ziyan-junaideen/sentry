@@ -40,6 +40,8 @@ type RenderSearchInputArgs = Omit<
   url?: SearchInputProps['url'];
 };
 
+export type GetEndPointsOutput = [string, string, any?, any?][];
+
 /**
  * Wraps methods on the AsyncComponent to catch errors and set the `error`
  * state on error.
@@ -378,7 +380,7 @@ export default class AsyncComponent<
    *   ['stateKeyName', '/endpoint/', {optional: 'query params'}, {options}]
    * ]
    */
-  getEndpoints(): [string, string, any?, any?][] {
+  getEndpoints(): GetEndPointsOutput {
     const endpoint = this.getEndpoint();
     if (!endpoint) {
       return [];

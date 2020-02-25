@@ -394,7 +394,7 @@ function routes() {
 
       <Route
         name="Data Privacy"
-        path="data-privacy"
+        path="data-privacy/"
         component={errorHandler(LazyLoad)}
         componentPromise={() =>
           import(

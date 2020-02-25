@@ -8,8 +8,8 @@ import JsonForm from 'app/views/settings/components/forms/jsonForm';
 import Form from 'app/views/settings/components/forms/form';
 import {fields} from 'app/data/forms/projectGeneralSettings';
 import AsyncView from 'app/views/asyncView';
+import {GetEndPointsOutput} from 'app/components/asyncComponent';
 import ProjectActions from 'app/actions/projectActions';
-import {Scope} from 'app/types';
 
 import {DataPrivacy} from './types';
 
@@ -21,8 +21,8 @@ class ProjectDataPrivacyContent extends AsyncView<DataPrivacy> {
 
   getEndpoints() {
     const {orgId, projectId} = this.props.params;
-    const endpoints = [['data', `/projects/${orgId}/${projectId}/`]];
-    return endpoints as Array<[string, string]>;
+    const endpoints: GetEndPointsOutput = [['data', `/projects/${orgId}/${projectId}/`]];
+    return endpoints;
   }
 
   renderBody() {
@@ -32,6 +32,7 @@ class ProjectDataPrivacyContent extends AsyncView<DataPrivacy> {
     const endpoint = `/projects/${orgId}/${projectId}/`;
     const access = new Set(organization.access);
     const features = new Set(organization.features);
+
     return (
       <React.Fragment>
         <SettingsPageHeader title={t('Data Privacy')} />
@@ -51,11 +52,8 @@ class ProjectDataPrivacyContent extends AsyncView<DataPrivacy> {
             title={t('Data Privacy')}
             additionalFieldProps={{
               organization,
-              groupingConfigs: this.state.groupingConfigs,
-              groupingEnhancementBases: this.state.groupingEnhancementBases,
             }}
             features={features}
-            access={(access as unknown) as Array<Scope>}
             disabled={!access.has('project:write')}
             fields={[
               fields.dataScrubber,
