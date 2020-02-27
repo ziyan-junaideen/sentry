@@ -7,6 +7,7 @@ from uuid import uuid4
 
 import six
 from django.db import transaction
+from django.db.models.signals import post_save
 from django.utils import timezone
 
 from sentry import analytics
@@ -55,7 +56,7 @@ class InvalidTriggerActionError(Exception):
 
 def create_incident(
     organization,
-    type,
+    _type,
     title,
     query,
     aggregation,
@@ -82,7 +83,7 @@ def create_incident(
             organization=organization,
             detection_uuid=detection_uuid,
             status=IncidentStatus.OPEN.value,
-            type=type.value,
+            type=_type.value,
             title=title,
             query=query,
             aggregation=aggregation.value,
@@ -91,9 +92,16 @@ def create_incident(
             alert_rule=alert_rule,
         )
         if projects:
-            IncidentProject.objects.bulk_create(
-                [IncidentProject(incident=incident, project=project) for project in projects]
-            )
+            incident_projects = [
+                IncidentProject(incident=incident, project=project) for project in projects
+            ]
+            IncidentProject.objects.bulk_create(incident_projects)
+            # `bulk_create` doesn't send `post_save` signals, so we manually fire them here.
+            for incident_project in incident_projects:
+                post_save.send(
+                    sender=type(incident_project), instance=incident_project, created=True
+                )
+
         if groups:
             IncidentGroup.objects.bulk_create(
                 [IncidentGroup(incident=incident, group=group) for group in groups]
@@ -104,7 +112,7 @@ def create_incident(
             "incident.created",
             incident_id=incident.id,
             organization_id=incident.organization_id,
-            incident_type=type.value,
+            incident_type=_type.value,
         )
 
     return incident
