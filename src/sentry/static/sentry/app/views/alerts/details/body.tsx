@@ -218,9 +218,8 @@ export default class DetailsBody extends React.Component<Props> {
                         slugs={incident && incident.projects}
                         orgId={params.orgId}
                       >
-                        {({initiallyLoaded, projects, fetching}) => (
+                        {({initiallyLoaded, projects}) => (
                           <SideHeaderLink
-                            disabled={!incident || fetching || !initiallyLoaded}
                             to={this.getDiscoverUrl(
                               ((initiallyLoaded && projects) as Project[]) || []
                             )}
