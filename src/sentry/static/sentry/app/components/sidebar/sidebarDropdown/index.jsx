@@ -45,12 +45,11 @@ class SidebarDropdown extends React.Component {
     const hasOrganization = !!org;
     const hasUser = !!user;
 
-    // If there is no org in context, we use an org from `withLatestContext`
-    // (which uses an org from organizations index endpoint versus details endpoint)
-    // and does not have `access`
-    const hasOrgRead = org && org.access && org.access.indexOf('org:read') > -1;
-    const hasMemberRead = org && org.access && org.access.indexOf('member:read') > -1;
-    const hasTeamRead = org && org.access && org.access.indexOf('team:read') > -1;
+    // It's possible we do not have an org in context (e.g. RouteNotFound)
+    // Otherwise, we should have the full org
+    const hasOrgRead = org?.access?.indexOf('org:read') > -1;
+    const hasMemberRead = org?.access?.indexOf('member:read') > -1;
+    const hasTeamRead = org?.access?.indexOf('team:read') > -1;
     const canCreateOrg = ConfigStore.get('features').has('organizations:create');
 
     // Avatar to use: Organization --> user --> Sentry
