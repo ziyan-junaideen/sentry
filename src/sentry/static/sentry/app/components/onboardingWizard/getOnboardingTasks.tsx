@@ -134,7 +134,7 @@ export default function getOnboardingTasks(
       prereq: [1],
       actionType: 'app',
       location: `/settings/${organization.slug}/projects/:projectId/alerts/`,
-      display: false,
+      display: true,
     },
   ];
 }
