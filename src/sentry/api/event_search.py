@@ -25,6 +25,9 @@ from sentry.search.utils import (
 from sentry.snuba.dataset import Dataset
 from sentry.utils.dates import to_timestamp
 from sentry.utils.snuba import DATASETS, get_json_type
+from sentry.utils.compat import map
+from sentry.utils.compat import zip
+from sentry.utils.compat import filter
 
 WILDCARD_CHARS = re.compile(r"[\*]")
 
@@ -292,7 +295,7 @@ class SearchVisitor(NodeVisitor):
             return children
 
         children = [child for group in children for child in _flatten(group)]
-        children = filter(None, _flatten(children))
+        children = [_f for _f in _flatten(children) if _f]
 
         return children
 
@@ -318,7 +321,6 @@ class SearchVisitor(NodeVisitor):
 
     def visit_raw_search(self, node, children):
         value = node.text.strip(" ")
-
         if not value:
             return None
 
@@ -555,7 +557,27 @@ class SearchVisitor(NodeVisitor):
         return node.text
 
     def visit_value(self, node, children):
-        return node.text
+        # A properly quoted value will match the quoted value regex, so any unescaped
+        # quotes are errors.
+        value = node.text
+        idx = value.find('"')
+        if idx == 0:
+            raise InvalidSearchQuery(
+                u"Invalid quote at '{}': quotes must enclose text or be escaped.".format(node.text)
+            )
+
+        while idx != -1:
+            if value[idx - 1] != "\\":
+                raise InvalidSearchQuery(
+                    u"Invalid quote at '{}': quotes must enclose text or be escaped.".format(
+                        node.text
+                    )
+                )
+
+            value = value[idx + 1 :]
+            idx = value.find('"')
+
+        return node.text.replace('\\"', '"')
 
     def visit_key(self, node, children):
         return node.text
@@ -575,8 +597,8 @@ def parse_search_query(query):
         tree = event_search_grammar.parse(query)
     except IncompleteParseError as e:
         idx = e.column()
-        prefix = query[max(0, idx - 5):idx]
-        suffix = query[idx:(idx + 5)]
+        prefix = query[max(0, idx - 5) : idx]
+        suffix = query[idx : (idx + 5)]
         raise InvalidSearchQuery(
             u"{} {}".format(
                 u"Parse error at '{}{}' (column {:d}).".format(prefix, suffix, e.column()),
@@ -596,7 +618,9 @@ def convert_search_boolean_to_snuba_query(search_boolean):
             return convert_search_boolean_to_snuba_query(term)
         else:
             raise InvalidSearchQuery(
-                u"Attempted to convert term of unrecognized type {} into a snuba expression".format(term.__class__.__name__)
+                u"Attempted to convert term of unrecognized type {} into a snuba expression".format(
+                    term.__class__.__name__
+                )
             )
 
     if not search_boolean:
@@ -742,7 +766,9 @@ def get_filter(query=None, params=None):
         try:
             parsed_terms = parse_search_query(query)
         except ParseError as e:
-            raise InvalidSearchQuery(u"Parse error: {} (column {:d})".format(e.expr.name, e.column()))
+            raise InvalidSearchQuery(
+                u"Parse error: {} (column {:d})".format(e.expr.name, e.column())
+            )
 
     kwargs = {
         "start": None,
@@ -769,7 +795,9 @@ def get_filter(query=None, params=None):
                     )
                 except Exception:
                     raise InvalidSearchQuery(
-                        u"Invalid query. Project {} does not exist or is not an actively selected project.".format(term.value.value)
+                        u"Invalid query. Project {} does not exist or is not an actively selected project.".format(
+                            term.value.value
+                        )
                     )
 
                 # Create a new search filter with the correct values
@@ -831,8 +859,8 @@ def get_filter(query=None, params=None):
 FIELD_ALIASES = {
     "last_seen": {"aggregations": [["max", "timestamp", "last_seen"]]},
     "latest_event": {"aggregations": [["argMax", ["id", "timestamp"], "latest_event"]]},
-    "project": {"fields": ["project.id"]},
-    "issue": {"fields": ["issue.id"]},
+    "project": {"fields": ["project.id"], "column_alias": "project.id"},
+    "issue": {"fields": ["issue.id"], "column_alias": "issue.id"},
     "user": {"fields": ["user.id", "user.username", "user.email", "user.ip"]},
     # Long term these will become more complex functions but these are
     # field aliases.
@@ -942,7 +970,9 @@ class NumberRange(FunctionArg):
             raise InvalidFunctionArgument(u"{} is not a number".format(value))
 
         if self.start and value < self.start:
-            raise InvalidFunctionArgument(u"{:g} must be greater than or equal to {:g}".format(value, self.start))
+            raise InvalidFunctionArgument(
+                u"{:g} must be greater than or equal to {:g}".format(value, self.start)
+            )
         elif self.end and value >= self.end:
             raise InvalidFunctionArgument(u"{:g} must be less than {:g}".format(value, self.end))
 
@@ -966,10 +996,7 @@ class IntervalDefault(NumberRange):
 FUNCTIONS = {
     "percentile": {
         "name": "percentile",
-        "args": [
-            NumericColumn("column"),
-            NumberRange("percentile", 0, 1),
-        ],
+        "args": [NumericColumn("column"), NumberRange("percentile", 0, 1)],
         "transform": u"quantile({percentile:.2f})({column})",
     },
     "rps": {
@@ -1032,7 +1059,16 @@ def resolve_function(field, match=None, params=None):
 
     snuba_string = function["transform"].format(**arguments)
 
-    return [], [[snuba_string, None, get_function_alias(function["name"], columns if not used_default else [])]]
+    return (
+        [],
+        [
+            [
+                snuba_string,
+                None,
+                get_function_alias(function["name"], columns if not used_default else []),
+            ]
+        ],
+    )
 
 
 def resolve_orderby(orderby, fields, aggregations):
@@ -1048,6 +1084,7 @@ def resolve_orderby(orderby, fields, aggregations):
     validated = []
     for column in orderby:
         bare_column = column.lstrip("-")
+
         if bare_column in fields:
             validated.append(column)
             continue
@@ -1096,12 +1133,17 @@ def resolve_field(field, params=None):
         # count() is a special function that ignores its column arguments.
         return (None, [["count", None, get_aggregate_alias(match)]])
 
+    # If we use an alias inside an aggregate, resolve it here
+    column = match.group("column")
+    if column in FIELD_ALIASES:
+        column = FIELD_ALIASES[column].get("column_alias", column)
+
     return (
         None,
         [
             [
                 VALID_AGGREGATES[match.group("function")]["snuba_name"],
-                match.group("column"),
+                column,
                 get_aggregate_alias(match),
             ]
         ],
@@ -1116,16 +1158,25 @@ def resolve_field_list(fields, snuba_args, params=None, auto_fields=True):
     groupby that can be merged into the result of get_snuba_query_args()
     to build a more complete snuba query based on event search conventions.
     """
-    # If project.name is requested, get the project.id from Snuba so we
-    # can use this to look up the name in Sentry
-    if "project.name" in fields:
-        fields.remove("project.name")
-        if "project.id" not in fields:
-            fields.append("project.id")
-
     aggregations = []
     columns = []
     groupby = []
+    project_key = ""
+    # Which column to map to project names
+    project_column = "project_id"
+
+    # If project is requested, we need to map ids to their names since snuba only has ids
+    if "project" in fields:
+        fields.remove("project")
+        project_key = "project"
+    # since project.name is more specific, if both are included use project.name instead of project
+    if PROJECT_NAME_ALIAS in fields:
+        fields.remove(PROJECT_NAME_ALIAS)
+        project_key = PROJECT_NAME_ALIAS
+    if project_key:
+        if "project.id" not in fields:
+            fields.append("project.id")
+
     for field in fields:
         column_additions, agg_additions = resolve_field(field, params)
         if column_additions:
@@ -1146,10 +1197,31 @@ def resolve_field_list(fields, snuba_args, params=None, auto_fields=True):
             columns.append("id")
         if not aggregations and "project.id" not in columns:
             columns.append("project.id")
+            project_column = "project_id"
         if aggregations and "latest_event" not in map(lambda a: a[-1], aggregations):
             aggregations.extend(deepcopy(FIELD_ALIASES["latest_event"]["aggregations"]))
         if aggregations and "project.id" not in columns:
             aggregations.append(["argMax", ["project.id", "timestamp"], "projectid"])
+            project_column = "projectid"
+        if project_key == "":
+            project_key = PROJECT_NAME_ALIAS
+
+    if project_key:
+        project_ids = snuba_args.get("filter_keys", {}).get("project_id", [])
+        projects = Project.objects.filter(id__in=project_ids).values("slug", "id")
+        aggregations.append(
+            [
+                u"transform({}, [{}], [{}], '')".format(
+                    project_column,
+                    # Need to use join like this so we don't get a list including Ls which confuses clickhouse
+                    ",".join([six.text_type(project["id"]) for project in projects]),
+                    # Can't just format a list since we'll get u"string" instead of a plain 'string'
+                    ",".join([u"'{}'".format(project["slug"]) for project in projects]),
+                ),
+                None,
+                project_key,
+            ]
+        )
 
     if rollup and columns and not aggregations:
         raise InvalidSearchQuery("You cannot use rollup without an aggregate field.")

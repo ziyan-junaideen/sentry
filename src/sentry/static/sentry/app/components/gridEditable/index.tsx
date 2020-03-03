@@ -2,14 +2,13 @@ import React from 'react';
 
 import {t} from 'app/locale';
 import {openModal} from 'app/actionCreators/modal';
-
 import EmptyStateWarning from 'app/components/emptyStateWarning';
 import Feature from 'app/components/acl/feature';
 import FeatureDisabled from 'app/components/acl/featureDisabled';
 import Hovercard from 'app/components/hovercard';
 import InlineSvg from 'app/components/inlineSvg';
 import LoadingIndicator from 'app/components/loadingIndicator';
-import {IconEdit, IconWarning} from 'app/icons';
+import {IconAdd, IconEdit, IconWarning} from 'app/icons';
 import theme from 'app/utils/theme';
 
 import {
@@ -36,7 +35,6 @@ import {
 } from './styles';
 import GridHeadCell from './gridHeadCell';
 import GridModalEditColumn from './gridModalEditColumn';
-
 import {COL_WIDTH_MINIMUM, COL_WIDTH_UNDEFINED, ColResizeMetadata} from './utils';
 
 type GridEditableProps<DataRow, ColumnKey> = {
@@ -362,7 +360,7 @@ class GridEditable<
     const onClick = canEdit ? () => this.openModalAddColumnAt() : undefined;
     return (
       <HeaderButton disabled={!canEdit} onClick={onClick} data-test-id="grid-add-column">
-        <InlineSvg src="icon-circle-add" />
+        <IconAdd size="xs" circle />
         {t('Add Column')}
       </HeaderButton>
     );
@@ -420,9 +418,9 @@ class GridEditable<
     return (
       <GridRow>
         {prependColumns &&
-          prependColumns.map((item, i) => {
-            return <GridHeadCellStatic key={`prepend-${i}`}>{item}</GridHeadCellStatic>;
-          })}
+          prependColumns.map((item, i) => (
+            <GridHeadCellStatic key={`prepend-${i}`}>{item}</GridHeadCellStatic>
+          ))}
         {/* Note that this.onResizeMouseDown assumes GridResizer is nested
             2 levels under GridHeadCell */
         columnOrder.map((column, i) => (
@@ -483,9 +481,9 @@ class GridEditable<
     return (
       <GridRow key={row}>
         {prependColumns &&
-          prependColumns.map((item, i) => {
-            return <GridBodyCell key={`prepend-${i}`}>{item}</GridBodyCell>;
-          })}
+          prependColumns.map((item, i) => (
+            <GridBodyCell key={`prepend-${i}`}>{item}</GridBodyCell>
+          ))}
         {columnOrder.map((col, i) => (
           <GridBodyCell key={`${col.key}${i}`}>
             {grid.renderBodyCell ? grid.renderBodyCell(col, dataRow) : dataRow[col.key]}

@@ -10,6 +10,7 @@ from django.core.urlresolvers import reverse
 
 from sentry.testutils import APITestCase, SnubaTestCase
 from sentry.testutils.helpers.datetime import iso_format, before_now
+from sentry.utils.compat import zip
 
 
 class OrganizationEventsStatsEndpointTest(APITestCase, SnubaTestCase):
@@ -259,7 +260,7 @@ class OrganizationEventsStatsEndpointTest(APITestCase, SnubaTestCase):
             for minute in range(count):
                 self.store_event(
                     data={
-                        "event_id": six.binary_type(uuid.uuid1()),
+                        "event_id": six.binary_type(six.text_type(uuid.uuid1()).encode("ascii")),
                         "message": "very bad",
                         "timestamp": iso_format(
                             self.day_ago + timedelta(hours=hour, minutes=minute)
@@ -298,7 +299,7 @@ class OrganizationEventsStatsEndpointTest(APITestCase, SnubaTestCase):
             for minute in range(count):
                 self.store_event(
                     data={
-                        "event_id": six.binary_type(uuid.uuid1()),
+                        "event_id": six.binary_type(six.text_type(uuid.uuid1()).encode("ascii")),
                         "message": "very bad",
                         "timestamp": iso_format(
                             self.day_ago + timedelta(hours=hour, minutes=minute)
@@ -334,7 +335,7 @@ class OrganizationEventsStatsEndpointTest(APITestCase, SnubaTestCase):
             for second in range(count):
                 self.store_event(
                     data={
-                        "event_id": six.binary_type(uuid.uuid1()),
+                        "event_id": six.binary_type(six.text_type(uuid.uuid1()).encode("ascii")),
                         "message": "very bad",
                         "timestamp": iso_format(
                             self.day_ago + timedelta(minutes=minute, seconds=second)
@@ -373,7 +374,7 @@ class OrganizationEventsStatsEndpointTest(APITestCase, SnubaTestCase):
             for second in range(count):
                 self.store_event(
                     data={
-                        "event_id": six.binary_type(uuid.uuid1()),
+                        "event_id": six.binary_type(six.text_type(uuid.uuid1()).encode("ascii")),
                         "message": "very bad",
                         "timestamp": iso_format(
                             self.day_ago + timedelta(minutes=minute, seconds=second)
@@ -577,3 +578,18 @@ class OrganizationEventsStatsEndpointTest(APITestCase, SnubaTestCase):
             )
 
         assert mock_query.call_count == 1
+
+    def test_invalid_interval(self):
+        with self.feature("organizations:discover-basic"):
+            response = self.client.get(
+                self.url,
+                format="json",
+                data={
+                    "end": iso_format(before_now()),
+                    "start": iso_format(before_now(hours=24)),
+                    "query": "",
+                    "interval": "1s",
+                    "yAxis": "count()",
+                },
+            )
+        assert response.status_code == 400

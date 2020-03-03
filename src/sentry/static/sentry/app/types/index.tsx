@@ -68,7 +68,7 @@ export type LightWeightOrganization = OrganizationSummary & {
     maxRate: number | null;
   };
   defaultRole: string;
-  experiments: ActiveExperiments;
+  experiments: Partial<ActiveExperiments>;
   allowJoinRequests: boolean;
   scrapeJavaScript: boolean;
   isDefault: boolean;
@@ -109,11 +109,36 @@ export type Project = {
   isBookmarked: boolean;
   hasUserReports?: boolean;
   hasAccess: boolean;
+  firstEvent: 'string' | null;
 
   // XXX: These are part of the DetailedProject serializer
   plugins: Plugin[];
   processingIssues: number;
 } & AvatarProject;
+
+export type ProjectRelease = {
+  version: string;
+  dateCreated: string;
+  dateReleased: string | null;
+  commitCount: number;
+  authors: User[];
+  newGroups: number;
+  healthData: Health | null;
+  projectSlug: string;
+};
+
+export type Health = {
+  crash_free_users: number | null;
+  total_users: number;
+  crash_free_sessions: number | null;
+  stats: HealthGraphData;
+  crashes: number;
+  errors: number;
+  adoption: number | null;
+};
+export type HealthGraphData = {
+  [key: string]: [number, number][];
+};
 
 export type Team = {
   id: string;
@@ -234,6 +259,10 @@ export type EventsStats = {
   totals?: {count: number};
 };
 
+export type YAxisEventsStats = {
+  [yAxisName: string]: EventsStats;
+};
+
 // Avatars are a more primitive version of User.
 export type AvatarUser = {
   id: string;
@@ -251,6 +280,16 @@ export type AvatarUser = {
   lastSeen?: string;
 };
 
+/**
+ * This is an authenticator that a user is enrolled in
+ */
+type UserEnrolledAuthenticator = {
+  dateUsed: EnrolledAuthenticator['lastUsedAt'];
+  dateCreated: EnrolledAuthenticator['createdAt'];
+  type: Authenticator['id'];
+  id: EnrolledAuthenticator['authId'];
+};
+
 export type User = AvatarUser & {
   lastLogin: string;
   isSuperuser: boolean;
@@ -266,7 +305,7 @@ export type User = AvatarUser & {
   isActive: boolean;
   has2fa: boolean;
   canReset2fa: boolean;
-  authenticators: Authenticator[];
+  authenticators: UserEnrolledAuthenticator[];
   dateJoined: string;
   options: {
     timezone: string;
@@ -346,12 +385,59 @@ export type GlobalSelection = {
   };
 };
 
-type Authenticator = {
-  dateUsed: string | null;
-  dateCreated: string;
-  type: string; // i.e. 'u2f'
-  id: string;
+export type Authenticator = {
+  /**
+   * String used to display on button for user as CTA to enroll
+   */
+  enrollButton: string;
+
+  /**
+   * Display name for the authenticator
+   */
   name: string;
+
+  /**
+   * Allows multiple enrollments to authenticator
+   */
+  allowMultiEnrollment: boolean;
+
+  /**
+   * String to display on button for user to remove authenticator
+   */
+  removeButton: string | null;
+
+  canValidateOtp: boolean;
+
+  /**
+   * Is user enrolled to this authenticator
+   */
+  isEnrolled: boolean;
+
+  /**
+   * String to display on button for additional information about authenticator
+   */
+  configureButton: string;
+
+  /**
+   * Type of authenticator
+   */
+  id: string;
+
+  /**
+   * Is this used as a backup interface?
+   */
+  isBackupInterface: boolean;
+
+  /**
+   * Description of the authenticator
+   */
+  description: string;
+} & Partial<EnrolledAuthenticator>;
+
+export type EnrolledAuthenticator = {
+  lastUsedAt: string | null;
+  createdAt: string;
+  authId: string;
 };
 
 export type Config = {
@@ -438,6 +524,9 @@ export type Group = {
   userReportCount: number;
 };
 
+/**
+ * Returned from /organizations/org/users/
+ */
 export type Member = {
   dateCreated: string;
   email: string;
@@ -453,9 +542,10 @@ export type Member = {
   isOnlyOwner: boolean;
   name: string;
   pending: boolean | undefined;
+  projects: string[];
   role: string;
   roleName: string;
-  roles: MemberRole[];
+  roles: MemberRole[]; // TODO(ts): This is not present from API call
   teams: string[];
   user: User;
 };
@@ -687,7 +777,7 @@ export type Release = {
   authors: User[];
   owner?: any; // TODO(ts)
   newGroups: number;
-  projects: {slug: string; name: string}[];
+  projects: {slug: string; name: string; healthData?: Health | null}[];
 } & BaseRelease;
 
 export type BaseRelease = {
@@ -738,6 +828,8 @@ export type SentryAppComponent = {
 
 export type ActiveExperiments = {
   TrialUpgradeV2Experiment: 'upgrade' | 'trial' | -1;
+  IntegrationDirectoryExperiment: '1' | '0';
+  AlertDefaultsExperimentTmp: 'testControl' | 'test2Options' | 'test3Options';
 };
 
 type SavedQueryVersions = 1 | 2;
@@ -800,8 +892,21 @@ export type IntegrationIssueConfig = {
   icon: string[];
 };
 
+export enum OnboardingTaskKey {
+  FIRST_PROJECT = 'create_project',
+  FIRST_EVENT = 'send_first_event',
+  INVITE_MEMBER = 'invite_member',
+  SECOND_PLATFORM = 'setup_second_platform',
+  USER_CONTEXT = 'setup_user_context',
+  RELEASE_TRACKING = 'setup_release_tracking',
+  SOURCEMAPS = 'setup_sourcemaps',
+  USER_REPORTS = 'setup_user_reports',
+  ISSUE_TRACKER = 'setup_issue_tracker',
+  ALERT_RULE = 'setup_alert_rules',
+}
+
 export type OnboardingTaskDescriptor = {
-  task: number;
+  task: OnboardingTaskKey;
   title: string;
   description: string;
   detailedDescription?: string;
@@ -820,11 +925,11 @@ export type OnboardingTaskDescriptor = {
 );
 
 export type OnboardingTaskStatus = {
-  task: number;
+  task: OnboardingTaskKey;
   status: 'skipped' | 'pending' | 'complete';
-  user: string | null;
-  dateCompleted: string;
-  data: object;
+  user?: string | null;
+  dateCompleted?: string;
+  data?: object;
 };
 
 export type OnboardingTask = OnboardingTaskStatus & OnboardingTaskDescriptor;
@@ -865,4 +970,17 @@ export type Chunks = {
   type: string;
   remark?: string;
   rule_id?: string;
+};
+
+export enum ResolutionStatus {
+  RESOLVED = 'resolved',
+  UNRESOLVED = 'unresolved',
+}
+export type ResolutionStatusDetails = {
+  inRelease?: string;
+  inNextRelease?: boolean;
+};
+export type UpdateResolutionStatus = {
+  status: ResolutionStatus;
+  statusDetails?: ResolutionStatusDetails;
 };

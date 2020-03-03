@@ -167,6 +167,12 @@ class TransitionChart extends React.Component {
   }
 
   render() {
+    const {loading, reloading} = this.props;
+
+    if (loading && !reloading) {
+      return <LoadingPanel data-test-id="events-request-loading" />;
+    }
+
     // We make use of the key prop to explicitly remount the children
     // https://reactjs.org/docs/lists-and-keys.html#keys
     return (
@@ -232,42 +238,37 @@ class EventsChart extends React.Component {
             includePrevious={includePrevious}
             yAxis={yAxis}
           >
-            {({loading, reloading, errored, timeseriesData, previousTimeseriesData}) => {
-              return (
-                <ReleaseSeries utc={utc} api={api} projects={projects}>
-                  {({releaseSeries}) => {
-                    if (errored) {
-                      return (
-                        <ErrorPanel>
-                          <IconWarning color={theme.gray2} size="lg" />
-                        </ErrorPanel>
-                      );
-                    }
-                    if (loading && !reloading) {
-                      return <LoadingPanel data-test-id="events-request-loading" />;
-                    }
-
+            {({loading, reloading, errored, timeseriesData, previousTimeseriesData}) => (
+              <ReleaseSeries utc={utc} api={api} projects={projects}>
+                {({releaseSeries}) => {
+                  if (errored) {
                     return (
-                      <TransitionChart loading={loading} reloading={reloading}>
-                        <React.Fragment>
-                          <TransparentLoadingMask visible={reloading} />
-                          <EventsAreaChart
-                            {...zoomRenderProps}
-                            loading={loading}
-                            reloading={reloading}
-                            utc={utc}
-                            showLegend={showLegend}
-                            releaseSeries={releaseSeries}
-                            timeseriesData={timeseriesData}
-                            previousTimeseriesData={previousTimeseriesData}
-                          />
-                        </React.Fragment>
-                      </TransitionChart>
+                      <ErrorPanel>
+                        <IconWarning color={theme.gray2} size="lg" />
+                      </ErrorPanel>
                     );
-                  }}
-                </ReleaseSeries>
-              );
-            }}
+                  }
+
+                  return (
+                    <TransitionChart loading={loading} reloading={reloading}>
+                      <React.Fragment>
+                        <TransparentLoadingMask visible={reloading} />
+                        <EventsAreaChart
+                          {...zoomRenderProps}
+                          loading={loading}
+                          reloading={reloading}
+                          utc={utc}
+                          showLegend={showLegend}
+                          releaseSeries={releaseSeries}
+                          timeseriesData={timeseriesData}
+                          previousTimeseriesData={previousTimeseriesData}
+                        />
+                      </React.Fragment>
+                    </TransitionChart>
+                  );
+                }}
+              </ReleaseSeries>
+            )}
           </EventsRequest>
         )}
       </ChartZoom>

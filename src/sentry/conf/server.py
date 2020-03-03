@@ -1432,6 +1432,7 @@ SENTRY_USE_X_FORWARDED_FOR = True
 
 SENTRY_DEFAULT_INTEGRATIONS = (
     "sentry.integrations.bitbucket.BitbucketIntegrationProvider",
+    "sentry.integrations.bitbucket_server.BitbucketServerIntegrationProvider",
     "sentry.integrations.slack.SlackIntegrationProvider",
     "sentry.integrations.github.GitHubIntegrationProvider",
     "sentry.integrations.github_enterprise.GitHubEnterpriseIntegrationProvider",
@@ -1763,3 +1764,15 @@ MIGRATIONS_TEST_MIGRATE = os.environ.get("MIGRATIONS_TEST_MIGRATE", "0") == "1"
 MIGRATIONS_LOCKFILE_APP_WHITELIST = ()
 # Where to write the lockfile to.
 MIGRATIONS_LOCKFILE_PATH = os.path.join(PROJECT_ROOT, os.path.pardir, os.path.pardir)
+
+# Log error and abort processing (without dropping event) when process_event is
+# taking more than n seconds to process event
+SYMBOLICATOR_PROCESS_EVENT_HARD_TIMEOUT = 1800
+
+# Log warning when process_event is taking more than n seconds to process event
+SYMBOLICATOR_PROCESS_EVENT_WARN_TIMEOUT = 120
+
+# Block process_event for this many seconds to wait for a response from
+# symbolicator. If too low, too many events up in the sleep queue. If too high,
+# process_event might backlog and affect events from other platforms.
+SYMBOLICATOR_POLL_TIMEOUT = 4

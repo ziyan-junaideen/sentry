@@ -23,6 +23,7 @@ from sentry.models import (
     AuditLogEntryEvent,
 )
 from sentry.testutils import APITestCase
+from sentry.utils.compat import zip
 
 
 class ProjectDetailsTest(APITestCase):
@@ -460,7 +461,7 @@ class ProjectUpdateTest(APITestCase):
         value = '{"applications": {"freeform": []}}'
         resp = self.client.put(self.path, data={"relayPiiConfig": value})
         assert resp.status_code == 400
-        assert "feature" in resp.content
+        assert b"feature" in resp.content
         assert self.project.get_option("sentry:relay_pii_config") is None
 
     def test_sensitive_fields(self):

@@ -176,7 +176,6 @@ class OrganizationEventsV2EndpointTest(APITestCase, SnubaTestCase):
         assert data[0]["user.email"] == "foo@example.com"
         meta = response.data["meta"]
         assert meta["id"] == "string"
-        assert meta["project.name"] == "string"
         assert meta["user.email"] == "string"
         assert meta["user.ip"] == "string"
         assert meta["timestamp"] == "date"
@@ -197,6 +196,26 @@ class OrganizationEventsV2EndpointTest(APITestCase, SnubaTestCase):
         assert response.status_code == 200, response.content
         assert len(response.data["data"]) == 1
         assert response.data["data"][0]["project.name"] == project.slug
+        assert "project.id" not in response.data["data"][0]
+        assert response.data["data"][0]["environment"] == "staging"
+
+    def test_project_without_name(self):
+        self.login_as(user=self.user)
+        project = self.create_project()
+        self.store_event(
+            data={"event_id": "a" * 32, "environment": "staging", "timestamp": self.min_ago},
+            project_id=project.id,
+        )
+
+        with self.feature("organizations:discover-basic"):
+            response = self.client.get(
+                self.url, format="json", data={"field": ["project", "environment"]}
+            )
+
+        assert response.status_code == 200, response.content
+        assert len(response.data["data"]) == 1
+        assert response.data["data"][0]["project"] == project.slug
+        assert response.data["meta"]["project"] == "string"
         assert "project.id" not in response.data["data"][0]
         assert response.data["data"][0]["environment"] == "staging"
 
@@ -221,7 +240,7 @@ class OrganizationEventsV2EndpointTest(APITestCase, SnubaTestCase):
 
         assert response.status_code == 200, response.content
         assert len(response.data["data"]) == 1
-        assert response.data["data"][0]["project.name"] == project.slug
+        assert response.data["data"][0]["project"] == project.slug
         assert "project.id" not in response.data["data"][0]
 
     def test_project_in_query_not_in_header(self):
@@ -305,7 +324,7 @@ class OrganizationEventsV2EndpointTest(APITestCase, SnubaTestCase):
 
         assert response.status_code == 200, response.content
         assert len(response.data["data"]) == 1
-        assert response.data["data"][0]["project.name"] == project2.slug
+        assert response.data["data"][0]["project"] == project2.slug
         assert "project.id" not in response.data["data"][0]
 
     def test_implicit_groupby(self):
@@ -376,7 +395,6 @@ class OrganizationEventsV2EndpointTest(APITestCase, SnubaTestCase):
         }
         meta = response.data["meta"]
         assert meta["count_id"] == "integer"
-        assert meta["project.name"] == "string"
         assert meta["latest_event"] == "string"
 
     def test_orderby(self):
@@ -1290,3 +1308,132 @@ class OrganizationEventsV2EndpointTest(APITestCase, SnubaTestCase):
                     assert data[0]["issue"] == event1.group.qualified_short_id
                 else:
                     assert data[0].get("issue", None) is None
+
+    def test_search_for_nonexistent_issue(self):
+        self.login_as(user=self.user)
+
+        project1 = self.create_project()
+        self.store_event(
+            data={
+                "event_id": "a" * 32,
+                "transaction": "/example",
+                "message": "how to make fast",
+                "timestamp": self.two_min_ago,
+                "fingerprint": ["group_1"],
+            },
+            project_id=project1.id,
+        )
+
+        with self.feature(
+            {"organizations:discover-basic": True, "organizations:global-views": True}
+        ):
+            response = self.client.get(
+                self.url, format="json", data={"field": ["count()"], "query": "issue.id:112358"}
+            )
+
+            assert response.status_code == 200, response.content
+            data = response.data["data"]
+            assert len(data) == 1
+            assert data[0]["count"] == 0
+
+    def test_issue_alias_inside_aggregate(self):
+        self.login_as(user=self.user)
+
+        project1 = self.create_project()
+        self.store_event(
+            data={
+                "event_id": "a" * 32,
+                "transaction": "/example",
+                "message": "how to make fast",
+                "timestamp": self.two_min_ago,
+                "fingerprint": ["group_1"],
+            },
+            project_id=project1.id,
+        )
+
+        self.store_event(
+            data={
+                "event_id": "b" * 32,
+                "transaction": "/example",
+                "message": "how to make fast",
+                "timestamp": self.two_min_ago,
+                "fingerprint": ["group_2"],
+            },
+            project_id=project1.id,
+        )
+
+        with self.feature(
+            {"organizations:discover-basic": True, "organizations:global-views": True}
+        ):
+            response = self.client.get(
+                self.url,
+                format="json",
+                data={
+                    "field": [
+                        "project",
+                        "count(id)",
+                        "count_unique(issue.id)",
+                        "count_unique(issue)",
+                    ],
+                    "sort": "-count(id)",
+                    "statsPeriod": "24h",
+                },
+            )
+
+            assert response.status_code == 200, response.content
+            data = response.data["data"]
+            assert len(data) == 1
+            assert data[0]["count_id"] == 2
+            assert data[0]["count_unique_issue_id"] == 2
+            assert data[0]["count_unique_issue"] == 2
+
+    def test_project_alias_inside_aggregate(self):
+        self.login_as(user=self.user)
+
+        project1 = self.create_project()
+        project2 = self.create_project()
+        self.store_event(
+            data={
+                "event_id": "a" * 32,
+                "transaction": "/example",
+                "message": "how to make fast",
+                "timestamp": self.two_min_ago,
+                "fingerprint": ["group_1"],
+            },
+            project_id=project1.id,
+        )
+        self.store_event(
+            data={
+                "event_id": "b" * 32,
+                "transaction": "/example",
+                "message": "how to make fast",
+                "timestamp": self.two_min_ago,
+                "fingerprint": ["group_2"],
+            },
+            project_id=project2.id,
+        )
+
+        with self.feature(
+            {"organizations:discover-basic": True, "organizations:global-views": True}
+        ):
+            response = self.client.get(
+                self.url,
+                format="json",
+                data={
+                    "field": [
+                        "event.type",
+                        "count(id)",
+                        "count_unique(project.id)",
+                        "count_unique(project)",
+                    ],
+                    "sort": "-count(id)",
+                    "statsPeriod": "24h",
+                },
+            )
+
+            assert response.status_code == 200, response.content
+            data = response.data["data"]
+            assert len(data) == 1
+            assert data[0]["count_id"] == 2
+            assert data[0]["count_unique_project_id"] == 2
+            assert data[0]["count_unique_project"] == 2
