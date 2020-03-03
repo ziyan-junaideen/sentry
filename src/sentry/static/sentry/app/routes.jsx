@@ -1,6 +1,7 @@
 import {Redirect, Route, IndexRoute, IndexRedirect} from 'react-router';
 import React from 'react';
 
+import {t} from 'app/locale';
 import {EXPERIMENTAL_SPA} from 'app/constants';
 import App from 'app/views/app';
 import AuthLayout from 'app/views/auth/layout';
@@ -393,7 +394,7 @@ function routes() {
       />
 
       <Route
-        name="Data Privacy"
+        name={t('Data Privacy')}
         path="data-privacy/"
         component={errorHandler(LazyLoad)}
         componentPromise={() =>
